@@ -1,0 +1,82 @@
+# =============================================================================
+# Semantic-Guided Completion (SGC) — Default Configuration
+# PTv3 (frozen semantic backbone) + Modified AdaPoinTr (completion backbone)
+# =============================================================================
+
+model:
+  NAME: SemanticGuidedCompletion
+  num_query: 512
+  num_points: 16384
+  num_classes: 12           # wall window door roof banister equipment sign awning stairs balcony eave other
+  sem_feat_dim: 256
+  use_normals: true
+  sem_alpha: 0.8            # KNN blend: 0.8 spatial + 0.2 semantic
+
+  center_num: [512, 256]
+  global_feature_dim: 1024
+  encoder_type: graph
+  decoder_type: fc
+
+  ptv3_config:
+    grid_size: 0.05
+    enc_depths: [2, 2, 2, 6, 2]
+    enc_channels: [32, 64, 128, 256, 512]
+    enc_num_head: [2, 4, 8, 16, 32]
+    enc_patch_size: [1024, 1024, 1024, 1024, 1024]
+    dec_depths: [2, 2, 2, 2]
+    dec_channels: [64, 64, 128, 256]
+    dec_num_head: [4, 4, 8, 16]
+    dec_patch_size: [1024, 1024, 1024, 1024]
+    enable_flash: true
+    frozen: true
+
+  encoder_config:
+    embed_dim: 384
+    depth: 6
+    num_heads: 6
+    k: 8
+    n_group: 2
+    mlp_ratio: 2.0
+    block_style_list: ['attn-graph', 'attn', 'attn', 'attn', 'attn', 'attn']
+    combine_style: concat
+
+  decoder_config:
+    embed_dim: 384
+    depth: 8
+    num_heads: 6
+    k: 8
+    n_group: 2
+    mlp_ratio: 2.0
+    self_attn_block_style_list:  ['attn-graph', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
+    self_attn_combine_style: concat
+    cross_attn_block_style_list: ['attn-graph', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
+    cross_attn_combine_style: concat
+
+  loss_config:
+    max_epochs: 300
+    f_score_threshold: 0.05
+    alpha: 1.0
+    beta: 0.5
+    gamma: 1.0
+
+optimizer:
+  type: AdamW
+  kwargs:
+    lr: 0.0005
+    weight_decay: 0.05
+
+dataset:
+  train:
+    data_root: data/facade_completion
+  val:
+    data_root: data/facade_completion
+  voxel_size: 0.05
+  chunk_size: 8.0
+  chunk_overlap: 0.5
+  pre_chunked: true
+
+total_bs: 8
+max_epoch: 300
+warmup_epochs: 10
+use_amp: true
+consider_metric: CDL1
